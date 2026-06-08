@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <title>V-Can Crop</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="V-Can Crop">
+  <link rel="apple-touch-icon" href="icon-180.png">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg: #020617;
+      --card: #0f172a;
+      --card-border: #1e293b;
+      --input-bg: #1e293b;
+      --input-border: #334155;
+      --text: #ffffff;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --amber: #f59e0b;
+      --amber-dim: #fbbf24;
+      --green: #4ade80;
+      --result-bg-start: rgba(120, 53, 15, 0.4);
+      --result-bg-end: #0f172a;
+      --result-border: rgba(120, 53, 15, 0.5);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body {
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin: 2px 0 0 0;
+    }
+
+    .reset-btn {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .reset-btn:active { background: #334155; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px 0;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 1.125rem;
+      color: var(--text);
+      text-align: center;
+      font-family: "SF Mono", ui-monospace, monospace;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+      -moz-appearance: textfield;
+    }
+    .input-group input::-webkit-outer-spin-button,
+    .input-group input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .input-group input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 1px var(--amber);
+    }
+
+    .result-card {
+      background: linear-gradient(to bottom right, var(--result-bg-start), var(--result-bg-end));
+      border: 1px solid var(--result-border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .result-card .card-title {
+      color: var(--amber-dim);
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .result-btn {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.15s;
+      color: inherit;
+      font-family: inherit;
+    }
+    .result-btn:active { background: #334155; }
+
+    .result-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+
+    .result-value-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--amber-dim);
+      font-family: "SF Mono", ui-monospace, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .icon-copy { color: var(--text-muted); }
+    .icon-check { color: var(--green); }
+
+    .meta {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--card-border);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    .meta-value {
+      color: #cbd5e1;
+      font-family: "SF Mono", ui-monospace, monospace;
+    }
+
+    .empty {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .footer {
+      font-size: 0.75rem;
+      color: #475569;
+      text-align: center;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1 class="title">V-Can Crop</h1>
+        <p class="subtitle">Centered crop calculator</p>
+      </div>
+      <button class="reset-btn" id="reset" aria-label="Reset">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Screen (Layer)</h2>
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="screenW">Width</label>
+          <input type="number" inputmode="numeric" id="screenW" value="832">
+        </div>
+        <div class="input-group">
+          <label for="screenH">Height</label>
+          <input type="number" inputmode="numeric" id="screenH" value="1248">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Source (Image)</h2>
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="sourceW">Width</label>
+          <input type="number" inputmode="numeric" id="sourceW" value="1920">
+        </div>
+        <div class="input-group">
+          <label for="sourceH">Height</label>
+          <input type="number" inputmode="numeric" id="sourceH" value="1080">
+        </div>
+      </div>
+    </div>
+
+    <div id="output"></div>
+
+    <p class="footer">Tap any value to copy</p>
+  </div>
+
+  <script>
+    const screenW = document.getElementById('screenW');
+    const screenH = document.getElementById('screenH');
+    const sourceW = document.getElementById('sourceW');
+    const sourceH = document.getElementById('sourceH');
+    const output = document.getElementById('output');
+    const resetBtn = document.getElementById('reset');
+
+    function calculate() {
+      const sw = parseFloat(screenW.value);
+      const sh = parseFloat(screenH.value);
+      const srcW = parseFloat(sourceW.value);
+      const srcH = parseFloat(sourceH.value);
+
+      if (!sw || !sh || !srcW || !srcH || sw <= 0 || sh <= 0 || srcW <= 0 || srcH <= 0) {
+        return null;
+      }
+
+      const screenRatio = sw / sh;
+      const sourceRatio = srcW / srcH;
+
+      let width, height, x, y, cropAxis, visibleW, visibleH;
+
+      if (Math.abs(sourceRatio - screenRatio) < 0.0001) {
+        width = srcW; height = srcH; x = 0; y = 0;
+        visibleW = srcW; visibleH = srcH;
+        cropAxis = 'none (same aspect ratio)';
+      } else if (sourceRatio > screenRatio) {
+        visibleH = srcH;
+        visibleW = Math.round(srcH * screenRatio);
+        width = visibleW;
+        x = Math.round((srcW - visibleW) / 2);
+        height = srcH;
+        y = 0;
+        cropAxis = 'X (sides)';
+      } else {
+        visibleW = srcW;
+        visibleH = Math.round(srcW / screenRatio);
+        height = visibleH;
+        y = Math.round((srcH - visibleH) / 2);
+        width = srcW;
+        x = 0;
+        cropAxis = 'Y (top/bottom)';
+      }
+
+      const scaleFactor = (sw / visibleW).toFixed(3);
+      return { width, height, x, y, cropAxis, scaleFactor, visibleW, visibleH };
+    }
+
+    function copyIcon() {
+      return '<svg class="icon icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    }
+
+    function checkIcon() {
+      return '<svg class="icon icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    }
+
+    function resultRow(label, value, key) {
+      return `<button class="result-btn" data-key="${key}" data-value="${value}">
+        <span class="result-label">${label}</span>
+        <span class="result-value-wrap">
+          <span class="result-value">${value}</span>
+          <span class="icon-slot">${copyIcon()}</span>
+        </span>
+      </button>`;
+    }
+
+    function render() {
+      const r = calculate();
+      if (!r) {
+        output.innerHTML = '<div class="empty">Enter valid values</div>';
+        return;
+      }
+      output.innerHTML = `
+        <div class="result-card">
+          <h2 class="card-title">V-Can Crop Values</h2>
+          <div class="result-grid">
+            ${resultRow('X', r.x, 'x')}
+            ${resultRow('Width', r.width, 'width')}
+            ${resultRow('Y', r.y, 'y')}
+            ${resultRow('Height', r.height, 'height')}
+          </div>
+          <div class="meta">
+            <div class="meta-row"><span>Visible area</span><span class="meta-value">${r.visibleW} × ${r.visibleH}</span></div>
+            <div class="meta-row"><span>Cropped axis</span><span class="meta-value">${r.cropAxis}</span></div>
+            <div class="meta-row"><span>Scale factor</span><span class="meta-value">×${r.scaleFactor}</span></div>
+          </div>
+        </div>
+      `;
+      attachCopyHandlers();
+    }
+
+    function attachCopyHandlers() {
+      output.querySelectorAll('.result-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const value = btn.dataset.value;
+          const slot = btn.querySelector('.icon-slot');
+          try {
+            await navigator.clipboard.writeText(value);
+          } catch {
+            // Fallback for old browsers / non-HTTPS
+            const ta = document.createElement('textarea');
+            ta.value = value;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch {}
+            document.body.removeChild(ta);
+          }
+          slot.innerHTML = checkIcon();
+          setTimeout(() => { slot.innerHTML = copyIcon(); }, 1200);
+        });
+      });
+    }
+
+    [screenW, screenH, sourceW, sourceH].forEach(input => {
+      input.addEventListener('input', render);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      screenW.value = '832';
+      screenH.value = '1248';
+      sourceW.value = '1920';
+      sourceH.value = '1080';
+      render();
+    });
+
+    render();
+
+    // Service worker for offline support
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(err => {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
